@@ -1,0 +1,32 @@
+{
+  "name": "worldbundler",
+  "version": "1.0.0",
+  "main": "bin/index.js",
+  "bin": {
+    "worldbundler": "./bin/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node src/worldbundler.js"
+  },
+  "author": "chrisesharp",
+  "license": "ISC",
+  "description": "A CLI to bundle up a FoundryVTT world",
+  "keywords": [],
+  "devDependencies": {
+    "chalk": "^4.1.1",
+    "clear": "^0.1.0",
+    "dotenv": "^16.0.3",
+    "figlet": "^1.5.0",
+    "inquirer": "^8.0.0",
+    "lodash": "^4.17.21",
+    "nedb-promises": "^6.1.0",
+    "path": "^0.12.7",
+    "tar": "^6.1.0",
+    "@foundryvtt/foundryvtt-cli": "^0.0.9",
+    "level": "^8.0.0"
+  },
+  "dependencies": {
+    "esm": "^3.2.25"
+  }
+}
