@@ -6,4 +6,4 @@ terraform.tf*
 .terraform.tf*
 .terraform.lock*
 tf.out
-foundry-upload.tgz
+*/foundry-upload.tgz
