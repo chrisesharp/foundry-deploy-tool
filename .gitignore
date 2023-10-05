@@ -2,8 +2,8 @@ node_modules/
 backup/
 .env
 .terraform/
-terraform.tf*
+*/terraform.tf*
 .terraform.tf*
 .terraform.lock*
-tf.out
+*/tf.out
 */foundry-upload.tgz
