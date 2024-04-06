@@ -7,8 +7,8 @@ if [ -z ${FOUNDRY_PASSWORD} ]; then echo "FOUNDRY_PASSWORD is unset" ; exit ; fi
 
 CLOUD=$1
 export IMAGE=foundryvtt
-export VERSION=11.315.1
-export FOUNDRY_VERSION=11.315
+export VERSION=12.317.0
+export FOUNDRY_VERSION=12.317
 export IBMREG=de.icr.io/ces-images
 export GKEREG=us.gcr.io/foundry-vtt-294720
 export DOREG=registry.digitalocean.com/chrisesharp
