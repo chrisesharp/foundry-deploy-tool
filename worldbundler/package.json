@@ -24,7 +24,7 @@
     "path": "^0.12.7",
     "tar": "^6.1.0",
     "@foundryvtt/foundryvtt-cli": "^0.0.9",
-    "level": "^8.0.0"
+    "level": "^8.0.1"
   },
   "dependencies": {
     "esm": "^3.2.25"
