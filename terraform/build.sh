@@ -25,19 +25,12 @@ case $CLOUD in
   ("") echo "Need to specify cloud [ibm|gke|do]"; exit ;;
 esac 
 
-# docker build \
-#   --build-arg VERSION=$VERSION \
-#   --build-arg FOUNDRY_MINIFY_STATIC_FILES=true \
-#   --tag $REPO:$VERSION \
-#   https://github.com/felddy/foundryvtt-docker.git#develop
-# docker build \
-  # --build-arg FOUNDRY_USERNAME=\'${FOUNDRY_USERNAME}\' \
-  # --build-arg FOUNDRY_PASSWORD=\'${FOUNDRY_PASSWORD}\' \
-  # --build-arg FOUNDRY_ADMIN_KEY=\'${FOUNDRY_ADMIN_KEY}\' \
+# docker buildx build --builder multi --platform linux/amd64,linux/arm64 --push \
 docker build \
   --build-arg VERSION=$VERSION \
   --build-arg FOUNDRY_MINIFY_STATIC_FILES=true \
   --tag $REPO:$VERSION \
   https://github.com/felddy/foundryvtt-docker.git#develop
 
+# Comment this out if using buildx
 docker push $REPO:$VERSION
