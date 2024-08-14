@@ -27,8 +27,8 @@ case $CLOUD in
   ("") echo "Need to specify cloud [ibm|gke|do]"; exit ;;
 esac 
 
-# docker buildx build --builder multi --platform linux/amd64,linux/arm64 \
-docker build \
+# docker build \
+docker buildx build --platform linux/amd64 \
   --push \
   --build-arg FOUNDRY_MINIFY_STATIC_FILES=true \
   --build-arg FOUNDRY_USERNAME=$FOUNDRY_USERNAME \
