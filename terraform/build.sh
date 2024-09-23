@@ -10,7 +10,7 @@ export IMAGE=foundryvtt
 # export FOUNDRY_VERSION=11.315
 # export VERSION=${FOUNDRY_VERSION}.1
 
-export FOUNDRY_VERSION=12.330
+export FOUNDRY_VERSION=12.331
 export VERSION=${FOUNDRY_VERSION}.0
 
 export IBMREG=de.icr.io/ces-images
