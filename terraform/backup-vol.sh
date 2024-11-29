@@ -11,13 +11,13 @@ echo "Copying data from ${DROPLET} to ${BACKUPDIR}/FoundryVTT/"
 mkdir -p "${BACKUPDIR}/FoundryVTT/"
 
 # Copy from Mac to Droplet
-#rsync --progress --partial -avz -e "ssh -i ~/.ssh/id_do -l root -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" ${BACKUPDIR} ${DROPLET}:/mnt/FoundryVTT
+#rsync --progress --partial -avz -e "ssh -i ~/.ssh/mac_token -l root -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" ${BACKUPDIR} ${DROPLET}:/mnt/FoundryVTT
 
 # Copy from Droplet to Mac
-# rsync --progress --partial -avz -e "ssh -i ~/.ssh/id_do -l root -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" ${DROPLET}:/mnt/FoundryVTT ${BACKUPDIR}
+# rsync --progress --partial -avz -e "ssh -i ~/.ssh/mac_token -l root -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" ${DROPLET}:/mnt/FoundryVTT ${BACKUPDIR}
 
-ssh root@${DROPLET} -i ~/.ssh/id_do "cd /mnt ; tar zcf - ./FoundryVTT | cat > /tmp/backup.tgz"
-scp -i ~/.ssh/id_do scp://root@${DROPLET}//tmp/backup.tgz /tmp
+ssh root@${DROPLET} -i ~/.ssh/mac_token "cd /mnt ; tar zcf - ./FoundryVTT | cat > /tmp/backup.tgz"
+scp -i ~/.ssh/mac_token scp://root@${DROPLET}//tmp/backup.tgz /tmp
 pushd ${BACKUPDIR}
 tar xf /tmp/backup.tgz
 rm /tmp/backup.tgz
