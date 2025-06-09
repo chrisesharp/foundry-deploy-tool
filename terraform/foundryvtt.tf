@@ -31,7 +31,8 @@ resource "digitalocean_droplet" "foundryvtt" {
     inline = [
       "export PATH=$PATH:/usr/bin",
       "cd /mnt && tar xf /mnt/foundry-upload.tgz",
-      "chown -R 421:421 /mnt/FoundryVTT; find /mnt/FoundryVTT/ -type d -print -exec chmod u=+rwx,g=+rx {} \\;",
+      # "chown -R 1000:1000 /mnt/FoundryVTT; chmod -R 777 /mnt/FoundryVTT",
+      "chown -R 421:421 /mnt/FoundryVTT; chmod -R 777 /mnt/FoundryVTT",
       "cd ~",
       "mkdir .config",
       "wget https://github.com/digitalocean/doctl/releases/download/v1.52.0/doctl-1.52.0-linux-amd64.tar.gz",
@@ -40,6 +41,7 @@ resource "digitalocean_droplet" "foundryvtt" {
       "doctl auth init -t ${var.do_token}",
       "doctl registry login",
       "docker pull ${var.docker_image}",
+      # "docker run -d -v /mnt/FoundryVTT:/data -p 30000:30000 --user 421:421 --env-file /tmp/.env ${var.docker_image}",
       "docker run -d -v /mnt/FoundryVTT:/data -p 30000:30000 --env-file /tmp/.env ${var.docker_image}",
       "rm /tmp/.env"
     ]
