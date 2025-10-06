@@ -14,5 +14,5 @@ variable "digitalocean_ssh_keyname" {
 variable "docker_image" {
     type = string
     # default = "registry.digitalocean.com/chrisesharp/foundryvtt:12.343.0"
-    default = "felddy/foundryvtt:13.348.0"
+    default = "felddy/foundryvtt:13.350.0"
 }
