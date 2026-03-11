@@ -41,7 +41,6 @@ resource "digitalocean_droplet" "foundryvtt" {
       "doctl auth init -t ${var.do_token}",
       "doctl registry login",
       "docker pull ${var.docker_image}",
-      # "docker run -d -v /mnt/FoundryVTT:/data -p 30000:30000 --user 421:421 --env-file /tmp/.env ${var.docker_image}",
       "docker run -d -v /mnt/FoundryVTT:/data -p 30000:30000 --env-file /tmp/.env ${var.docker_image}",
       "rm /tmp/.env"
     ]
