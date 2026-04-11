@@ -9,6 +9,8 @@ export TF_VAR_do_token=${DO_KEY}
 export TF_VAR_pvt_key=${PVT_KEY}
 export TF_VAR_foundry_user=${FOUNDRY_USERNAME}
 export TF_VAR_foundry_password=${FOUNDRY_PASSWORD}
+export TF_VAR_duckdns_token=${DNS_TOKEN}
+export TF_VAR_duckdns_subdomain=${DNS_DOMAIN}
 
 worldbundler
 
@@ -22,14 +24,14 @@ fi
 
 if [ $? -eq 0 ]
 then
-ipv4_address=`terraform show -json |jq '.values.root_module.resources[1].values.ipv4_address'  | sed -e 's/^"//' -e 's/"$//'`
+ipv4_address=`terraform show -json |jq '.values.root_module.resources[] |select(.address=="digitalocean_droplet.foundryvtt").values.ipv4_address' | sed -e 's/^"//' -e 's/"$//'`
 echo 'IP address:' ${ipv4_address}
 
-DNS=`curl https://www.duckdns.org/update/${DNS_DOMAIN}/${DNS_TOKEN}/${ipv4_address}`
-echo 'Updating DNS:' ${DNS}
+# DNS=`curl https://www.duckdns.org/update/${DNS_DOMAIN}/${DNS_TOKEN}/${ipv4_address}`
+# echo 'Updating DNS:' ${DNS}
 
 sleep 1
-open http://${DNS_DOMAIN}.duckdns.org:30000/
+open https://${DNS_DOMAIN}.duckdns.org:30000/
 else
     echo "Something went wrong: $?"
 fi

@@ -85,7 +85,7 @@ function buildBundle(dirs) {
 async function chooseWorld(worldsList) {
     const answer = await askForWorld(worldsList);
     if (answer.worlds.length) {
-        const dirs = ['FoundryVTT/Data/common', 'FoundryVTT/Data/tokenizer' ];
+        const dirs = ['FoundryVTT/Data/common', 'FoundryVTT/Data/tokenizer', 'FoundryVTT/container_patches' ];
         await Promise.all(answer.worlds.map(async (world) => {
             const chosenWorld = `${worldsDir}/${world}`;
             let depDirs = await getWorldDependencies(chosenWorld);

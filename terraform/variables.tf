@@ -16,3 +16,27 @@ variable "docker_image" {
     # default = "registry.digitalocean.com/chrisesharp/foundryvtt:12.343.0"
     default = "felddy/foundryvtt:13.351.0"
 }
+
+variable "domain_name" {
+  type        = string
+  description = "The domain name registered in DigitalOcean (e.g., duckdns.org)"
+  default     = "chrisesharp.duckdns.org"
+}
+
+variable "subdomain" {
+  type        = string
+  description = "The subdomain for the A record (e.g., 'chrisesharp')"
+  default     = "@"
+}
+
+variable "duckdns_token" {
+  type        = string
+  description = "Your DuckDNS token"
+  sensitive   = true
+}
+
+variable "duckdns_subdomain" {
+  type        = string
+  description = "Your DuckDNS subdomain (e.g., 'chrisesharp' for chrisesharp.duckdns.org)"
+  default     = "chrisesharp"
+}

@@ -9,5 +9,7 @@ export TF_VAR_do_token=${DO_KEY}
 export TF_VAR_pvt_key=${PVT_KEY}
 export TF_VAR_foundry_user=${FOUNDRY_USERNAME}
 export TF_VAR_foundry_password=${FOUNDRY_PASSWORD}
+export TF_VAR_duckdns_token=${DNS_TOKEN}
+export TF_VAR_duckdns_subdomain=${DNS_DOMAIN}
 # terraform destroy -var "do_token=${DO_KEY}" -var "pvt_key=${PVT_KEY}" -var "foundry_user=${FOUNDRY_USERNAME}" -var "foundry_password=${FOUNDRY_PASSWORD}" -auto-approve
 terraform destroy -auto-approve
