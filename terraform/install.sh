@@ -11,6 +11,7 @@ export TF_VAR_foundry_user=${FOUNDRY_USERNAME}
 export TF_VAR_foundry_password=${FOUNDRY_PASSWORD}
 export TF_VAR_duckdns_token=${DNS_TOKEN}
 export TF_VAR_duckdns_subdomain=${DNS_DOMAIN}
+export TF_VAR_certs=${CERTS}
 
 worldbundler
 

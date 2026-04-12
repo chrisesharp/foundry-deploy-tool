@@ -2,6 +2,10 @@ variable "do_token" {}
 variable "pvt_key" {}
 variable "foundry_user" {}
 variable "foundry_password" {}
+variable "certs" {
+  type = string
+  default = "letsencrypt.tgz"
+}
 variable "data_dir" {
     type = string
     # default = "~/Dropbox/FoundryVTT"

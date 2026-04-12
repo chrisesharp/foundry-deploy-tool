@@ -29,7 +29,7 @@ resource "digitalocean_droplet" "foundryvtt" {
   }
 
   provisioner "file" {
-    source = "letsencrypt.tgz"
+    source = var.certs
     destination = "/tmp/le.tgz"
   }
 

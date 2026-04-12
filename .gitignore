@@ -7,4 +7,4 @@ backup/
 */.terraform.lock*
 */tf.out
 foundry-upload.tgz
-letsencrypt.tgz
+letsencrypt.*
