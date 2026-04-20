@@ -37,7 +37,8 @@ resource "digitalocean_droplet" "foundryvtt" {
     inline = [
       "export PATH=$PATH:/usr/bin",
       "echo '>>>>> Setting up LetsEnrypt'",
-      "sudo apt update && sudo apt install -y certbot",
+      "sudo apt update",
+      "sudo apt install -y certbot",
       "cd / && tar xf /tmp/le.tgz",
       "ufw allow http && ufw allow https",
       "certbot renew -n",
