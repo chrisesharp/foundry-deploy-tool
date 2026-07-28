@@ -9,4 +9,5 @@ backup/
 foundry-upload.tgz
 letsencrypt.*
 terraform-apply.log
+terraform-destroy.log
 **/.DS_Store
