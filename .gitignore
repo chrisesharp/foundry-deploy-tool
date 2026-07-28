@@ -8,3 +8,4 @@ backup/
 */tf.out
 foundry-upload.tgz
 letsencrypt.*
+terraform-apply.log

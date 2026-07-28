@@ -36,27 +36,19 @@ resource "digitalocean_droplet" "foundryvtt" {
   provisioner "remote-exec" {
     inline = [
       "export PATH=$PATH:/usr/bin",
-      "echo '>>>>> Setting up LetsEnrypt'",
+      "echo '>>>>> Setting up LetsEncrypt'",
       "sudo apt update",
       "sudo apt install -y certbot",
       "cd / && tar xf /tmp/le.tgz",
       "ufw allow http && ufw allow https",
-      "certbot renew -n",
       "echo '>>>>> Installing FoundryVTT'",
       "cd /mnt && tar xf /mnt/foundry-upload.tgz",
-      "cp /etc/letsencrypt/live/${var.domain_name}/cert.pem /mnt/FoundryVTT/Config/example.crt",
-      "cp /etc/letsencrypt/live/${var.domain_name}/privkey.pem /mnt/FoundryVTT/Config/example.key",
       "chown -R 421:421 /mnt/FoundryVTT; chmod -R 777 /mnt/FoundryVTT",
       "cd ~",
       "mkdir .config",
-      # "wget https://github.com/digitalocean/doctl/releases/download/v1.52.0/doctl-1.52.0-linux-amd64.tar.gz",
-      # "tar xf ~/doctl-1.52.0-linux-amd64.tar.gz",
-      # "sudo mv ~/doctl /usr/local/bin",
-      # "doctl auth init -t ${var.do_token}",
-      # "doctl registry login",
       "docker pull ${var.docker_image}",
-      "docker run -d -v /mnt/FoundryVTT:/data -p 30000:30000 --env-file /tmp/.env ${var.docker_image}",
-      "rm /tmp/.env"
+      "cp /tmp/.env /mnt/FoundryVTT/.env && chmod 600 /mnt/FoundryVTT/.env && rm /tmp/.env",
+      "docker run -d -v /mnt/FoundryVTT:/data -p 30000:30000 --env-file /mnt/FoundryVTT/.env ${var.docker_image}",
     ]
   }
 }
@@ -96,19 +88,71 @@ resource "null_resource" "update_duckdns" {
   depends_on = [digitalocean_droplet.foundryvtt]
 }
 
-# data "digitalocean_volume_snapshot" "foundryvtt" {
-#   name_regex = "^foundryvtt-backup"
-#   region = "lon1"
-# }
+# To force cert renewal on an existing deployment without recreating the droplet, run:
+#   terraform taint null_resource.renew_cert && terraform apply -auto-approve </dev/null 2>&1 | tee terraform-apply.log
+resource "null_resource" "wait_for_dns" {
+  triggers = {
+    droplet_ip = digitalocean_droplet.foundryvtt.ipv4_address
+  }
 
-# resource "digitalocean_volume" "foundryvtt" {
-#   region      = "lon1"
-#   name        = "FoundryVTT"
-#   size        = data.digitalocean_volume_snapshot.foundryvtt.min_disk_size
-#   snapshot_id = data.digitalocean_volume_snapshot.foundryvtt.id
-# }
+  # Poll DNS locally (no SSH connection) until the domain resolves to the new droplet IP,
+  # confirming propagation has reached resolvers that Let's Encrypt validators will use.
+  # This avoids both the fixed sleep and the macOS tty corruption caused by remote-exec.
+  provisioner "local-exec" {
+    command = <<-EOF
+      TARGET="${digitalocean_droplet.foundryvtt.ipv4_address}"
+      echo "Polling DNS until ${var.domain_name} resolves to $TARGET ..."
+      for i in $(seq 1 60); do
+        RESOLVED=$(dig ${var.domain_name} +short | grep -E '^[0-9]+\.' | head -1)
+        echo "  attempt $i: got '$RESOLVED'"
+        if [ "$RESOLVED" = "$TARGET" ]; then
+          echo "DNS propagated."
+          exit 0
+        fi
+        sleep 5
+      done
+      echo "WARNING: DNS did not propagate within 5 minutes; proceeding anyway."
+      exit 0
+    EOF
+  }
 
-# resource "digitalocean_volume_attachment" "foundryvtt" {
-#   droplet_id = digitalocean_droplet.foundryvtt.id
-#   volume_id  = digitalocean_volume.foundryvtt.id
-# }
+  depends_on = [null_resource.update_duckdns]
+}
+
+resource "null_resource" "renew_cert" {
+  triggers = {
+    droplet_ip = digitalocean_droplet.foundryvtt.ipv4_address
+  }
+
+  connection {
+    host        = digitalocean_droplet.foundryvtt.ipv4_address
+    user        = "root"
+    type        = "ssh"
+    private_key = file(var.pvt_key)
+    timeout     = "5m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      # Attempt cert renewal. On failure (e.g. rate-limited), log the error and
+      # continue — the container restart below is unconditional so the site still
+      # comes up (on the seeded cert) and the browser still opens.
+      "echo '>>>>> Force renewing certificate'",
+      "if certbot renew -n --force-renewal --standalone; then",
+      "  cp /etc/letsencrypt/live/${var.domain_name}/fullchain.pem /mnt/FoundryVTT/Config/example.crt",
+      "  cp /etc/letsencrypt/live/${var.domain_name}/privkey.pem /mnt/FoundryVTT/Config/example.key",
+      "  chown 421:421 /mnt/FoundryVTT/Config/example.crt /mnt/FoundryVTT/Config/example.key",
+      "  echo '>>>>> Certificate renewed and installed'",
+      "else",
+      "  echo '>>>>> WARNING: certbot renewal failed — site will use existing cert' >&2",
+      "fi",
+      # Always restart the container so it picks up any cert changes.
+      "CONTAINER=$(docker ps -q --filter ancestor=${var.docker_image})",
+      "docker stop $CONTAINER && docker rm $CONTAINER",
+      "find /mnt/FoundryVTT -name '*.lock' -delete",
+      "docker run -d -v /mnt/FoundryVTT:/data -p 30000:30000 --env-file /mnt/FoundryVTT/.env ${var.docker_image}",
+    ]
+  }
+
+  depends_on = [null_resource.wait_for_dns]
+}

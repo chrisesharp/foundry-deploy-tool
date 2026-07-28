@@ -18,12 +18,16 @@ worldbundler
 if [ $? -eq 0 ]
 then
     # terraform apply -var "do_token=${DO_KEY}" -var "pvt_key=${PVT_KEY}" -var "foundry_user=${FOUNDRY_USERNAME}" -var "foundry_password=${FOUNDRY_PASSWORD}" -auto-approve
-    terraform apply -auto-approve
+    # SSH_AUTH_SOCK= prevents Terraform's SSH client from consulting the macOS SSH agent.
+    # Both connection blocks already supply private_key directly, so the agent is never
+    # needed. Without this, the agent interaction corrupts the local tty even with </dev/null.
+    SSH_AUTH_SOCK= terraform apply -auto-approve </dev/null 2>&1 | tee terraform-apply.log
+    TF_EXIT=${PIPESTATUS[0]}
 else
     exit
 fi
 
-if [ $? -eq 0 ]
+if [ $TF_EXIT -eq 0 ]
 then
 ipv4_address=`terraform show -json |jq '.values.root_module.resources[] |select(.address=="digitalocean_droplet.foundryvtt").values.ipv4_address' | sed -e 's/^"//' -e 's/"$//'`
 echo 'IP address:' ${ipv4_address}
