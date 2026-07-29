@@ -68,12 +68,15 @@ resource "digitalocean_record" "foundryvttv4" {
 }
 
 # Create the AAAA record pointing to the droplet
+# depends_on the A record to serialise DO API calls and avoid deadlock (Error 1213)
 resource "digitalocean_record" "foundryvttv6" {
   domain = data.digitalocean_domain.main.id
   type   = "AAAA"
   name   = var.subdomain
   value  = digitalocean_droplet.foundryvtt.ipv6_address
   ttl    = 300  # 5 minutes, adjust as needed
+
+  depends_on = [digitalocean_record.foundryvttv4]
 }
 
 resource "null_resource" "update_duckdns" {
@@ -137,8 +140,8 @@ resource "null_resource" "renew_cert" {
       # Attempt cert renewal. On failure (e.g. rate-limited), log the error and
       # continue — the container restart below is unconditional so the site still
       # comes up (on the seeded cert) and the browser still opens.
-      "echo '>>>>> Force renewing certificate'",
-      "if certbot renew -n --force-renewal --standalone; then",
+      "echo '>>>>> Renewing certificate if due (within 30 days of expiry)'",
+      "if certbot renew -n --standalone; then",
       "  cp /etc/letsencrypt/live/${var.domain_name}/fullchain.pem /mnt/FoundryVTT/Config/example.crt",
       "  cp /etc/letsencrypt/live/${var.domain_name}/privkey.pem /mnt/FoundryVTT/Config/example.key",
       "  chown 421:421 /mnt/FoundryVTT/Config/example.crt /mnt/FoundryVTT/Config/example.key",
