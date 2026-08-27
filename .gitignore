@@ -11,3 +11,4 @@ letsencrypt.*
 terraform-apply.log
 terraform-destroy.log
 **/.DS_Store
+terraform/specs/
