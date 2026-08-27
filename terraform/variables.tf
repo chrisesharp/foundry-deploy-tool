@@ -1,24 +1,31 @@
 variable "do_token" {}
-variable "pvt_key" {}
+variable "pvt_key" {
+  type        = string
+  description = "Path to the SSH private key file"
+}
+variable "pub_key" {
+  type        = string
+  description = "Path to the SSH public key file corresponding to pvt_key"
+}
 variable "foundry_user" {}
 variable "foundry_password" {}
 variable "certs" {
-  type = string
+  type    = string
   default = "letsencrypt.tgz"
 }
 variable "data_dir" {
-    type = string
-    # default = "~/Dropbox/FoundryVTT"
-    default = "foundry-upload.tgz"
+  type = string
+  # default = "~/Dropbox/FoundryVTT"
+  default = "foundry-upload.tgz"
 }
 variable "digitalocean_ssh_keyname" {
-    type = string
-    default = "mac_token"
+  type    = string
+  default = "foundryvtt"
 }
 variable "docker_image" {
-    type = string
-    # default = "registry.digitalocean.com/chrisesharp/foundryvtt:12.343.0"
-    default = "felddy/foundryvtt:13.351.0"
+  type = string
+  # default = "registry.digitalocean.com/chrisesharp/foundryvtt:12.343.0"
+  default = "felddy/foundryvtt:13.351.0"
 }
 
 variable "domain_name" {
@@ -43,4 +50,9 @@ variable "duckdns_subdomain" {
   type        = string
   description = "Your DuckDNS subdomain (e.g., 'chrisesharp' for chrisesharp.duckdns.org)"
   default     = "chrisesharp"
+}
+
+variable "operator_ip" {
+  type        = string
+  description = "Operator egress IP used to restrict SSH key authorisation (from= in authorized_keys)"
 }

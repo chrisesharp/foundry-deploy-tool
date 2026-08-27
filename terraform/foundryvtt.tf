@@ -1,35 +1,82 @@
 resource "digitalocean_droplet" "foundryvtt" {
   # image = "ubuntu-18-04-x64"
-  image = "docker-20-04"
-  name = "foundryvtt"
+  image  = "docker-20-04"
+  name   = "foundryvtt"
   region = "lon1"
-  size = "s-2vcpu-4gb"
-  ipv6 = true
+  size   = "s-2vcpu-4gb"
+  ipv6   = true
   # disk = 32
   private_networking = true
   ssh_keys = [
     data.digitalocean_ssh_key.terraform.id
   ]
+
+  user_data = <<-EOF
+    #!/bin/bash
+    # Create the deploy user and grant scoped passwordless sudo
+    useradd -m -s /bin/bash deploy
+    echo "deploy ALL=(ALL) NOPASSWD: /usr/bin/apt,/usr/bin/apt-get,/usr/bin/docker,/usr/bin/cp,/usr/bin/chmod,/usr/bin/chown,/usr/bin/tar,/usr/bin/mkdir,/usr/bin/find,/usr/bin/rm,/usr/bin/certbot,/usr/sbin/ufw" \
+      > /etc/sudoers.d/deploy
+    chmod 440 /etc/sudoers.d/deploy
+
+    # Add the operator SSH public key with IP restriction
+    install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+    echo "from=\"${var.operator_ip}\" ${file(var.pub_key)}" \
+      > /home/deploy/.ssh/authorized_keys
+    chmod 600 /home/deploy/.ssh/authorized_keys
+    chown deploy:deploy /home/deploy/.ssh/authorized_keys
+  EOF
+
+}
+
+# Wait for cloud-init to finish creating the deploy user before any provisioners run.
+# Connects as root (always available immediately) and blocks until cloud-init is done.
+resource "null_resource" "wait_for_cloud_init" {
+  triggers = {
+    droplet_id = digitalocean_droplet.foundryvtt.id
+  }
+
   connection {
-    host = self.ipv4_address
-    user = "root"
-    type = "ssh"
+    host        = digitalocean_droplet.foundryvtt.ipv4_address
+    user        = "root"
+    type        = "ssh"
     private_key = file(var.pvt_key)
-    timeout = "2m"
+    timeout     = "2m"
+  }
+
+  provisioner "remote-exec" {
+    inline = ["cloud-init status --wait"]
+  }
+
+  depends_on = [digitalocean_droplet.foundryvtt]
+}
+
+# All file uploads and setup commands run as deploy, after cloud-init has completed.
+resource "null_resource" "provision_droplet" {
+  triggers = {
+    droplet_id = digitalocean_droplet.foundryvtt.id
+  }
+
+  connection {
+    host        = digitalocean_droplet.foundryvtt.ipv4_address
+    user        = "deploy"
+    type        = "ssh"
+    private_key = file(var.pvt_key)
+    timeout     = "2m"
   }
 
   provisioner "file" {
-    source = var.data_dir
-    destination = "/mnt/foundry-upload.tgz"
+    source      = var.data_dir
+    destination = "/tmp/foundry-upload.tgz"
   }
 
   provisioner "file" {
-    source = "../.env"
+    source      = "../.env"
     destination = "/tmp/.env"
   }
 
   provisioner "file" {
-    source = var.certs
+    source      = var.certs
     destination = "/tmp/le.tgz"
   }
 
@@ -39,18 +86,22 @@ resource "digitalocean_droplet" "foundryvtt" {
       "echo '>>>>> Setting up LetsEncrypt'",
       "sudo apt update",
       "sudo apt install -y certbot",
-      "cd / && tar xf /tmp/le.tgz",
-      "ufw allow http && ufw allow https",
+      "sudo tar xf /tmp/le.tgz -C /",
+      "sudo ufw allow http && sudo ufw allow https",
       "echo '>>>>> Installing FoundryVTT'",
-      "cd /mnt && tar xf /mnt/foundry-upload.tgz",
-      "chown -R 421:421 /mnt/FoundryVTT; chmod -R 777 /mnt/FoundryVTT",
+      "sudo tar xf /tmp/foundry-upload.tgz -C /mnt",
+      "sudo chown -R 421:421 /mnt/FoundryVTT",
+      "sudo find /mnt/FoundryVTT -type d -exec chmod 750 {} \\;",
+      "sudo find /mnt/FoundryVTT -type f -exec chmod 640 {} \\;",
+      "sudo chmod 700 /mnt/FoundryVTT/Config",
       "cd ~",
       "mkdir .config",
-      "docker pull ${var.docker_image}",
-      "cp /tmp/.env /mnt/FoundryVTT/.env && chmod 600 /mnt/FoundryVTT/.env && rm /tmp/.env",
-      "docker run -d -v /mnt/FoundryVTT:/data -p 30000:30000 --env-file /mnt/FoundryVTT/.env ${var.docker_image}",
+      "sudo docker pull ${var.docker_image}",
+      "sudo cp /tmp/.env /mnt/FoundryVTT/.env && sudo chmod 600 /mnt/FoundryVTT/.env && sudo rm /tmp/.env",
     ]
   }
+
+  depends_on = [null_resource.wait_for_cloud_init]
 }
 
 # Reference to your existing domain in DigitalOcean
@@ -64,7 +115,7 @@ resource "digitalocean_record" "foundryvttv4" {
   type   = "A"
   name   = var.subdomain
   value  = digitalocean_droplet.foundryvtt.ipv4_address
-  ttl    = 300  # 5 minutes, adjust as needed
+  ttl    = 300 # 5 minutes, adjust as needed
 }
 
 # Create the AAAA record pointing to the droplet
@@ -74,7 +125,7 @@ resource "digitalocean_record" "foundryvttv6" {
   type   = "AAAA"
   name   = var.subdomain
   value  = digitalocean_droplet.foundryvtt.ipv6_address
-  ttl    = 300  # 5 minutes, adjust as needed
+  ttl    = 300 # 5 minutes, adjust as needed
 
   depends_on = [digitalocean_record.foundryvttv4]
 }
@@ -129,7 +180,7 @@ resource "null_resource" "renew_cert" {
 
   connection {
     host        = digitalocean_droplet.foundryvtt.ipv4_address
-    user        = "root"
+    user        = "deploy"
     type        = "ssh"
     private_key = file(var.pvt_key)
     timeout     = "5m"
@@ -141,21 +192,21 @@ resource "null_resource" "renew_cert" {
       # continue — the container restart below is unconditional so the site still
       # comes up (on the seeded cert) and the browser still opens.
       "echo '>>>>> Renewing certificate if due (within 30 days of expiry)'",
-      "if certbot renew -n --standalone; then",
-      "  cp /etc/letsencrypt/live/${var.domain_name}/fullchain.pem /mnt/FoundryVTT/Config/example.crt",
-      "  cp /etc/letsencrypt/live/${var.domain_name}/privkey.pem /mnt/FoundryVTT/Config/example.key",
-      "  chown 421:421 /mnt/FoundryVTT/Config/example.crt /mnt/FoundryVTT/Config/example.key",
+      "if sudo certbot renew -n --standalone; then",
+      "  sudo cp /etc/letsencrypt/live/${var.domain_name}/fullchain.pem /mnt/FoundryVTT/Config/example.crt",
+      "  sudo cp /etc/letsencrypt/live/${var.domain_name}/privkey.pem /mnt/FoundryVTT/Config/example.key",
+      "  sudo chown 421:421 /mnt/FoundryVTT/Config/example.crt /mnt/FoundryVTT/Config/example.key",
       "  echo '>>>>> Certificate renewed and installed'",
       "else",
       "  echo '>>>>> WARNING: certbot renewal failed — site will use existing cert' >&2",
       "fi",
       # Always restart the container so it picks up any cert changes.
-      "CONTAINER=$(docker ps -q --filter ancestor=${var.docker_image})",
-      "docker stop $CONTAINER && docker rm $CONTAINER",
-      "find /mnt/FoundryVTT -name '*.lock' -delete",
-      "docker run -d -v /mnt/FoundryVTT:/data -p 30000:30000 --env-file /mnt/FoundryVTT/.env ${var.docker_image}",
+      "CONTAINER=$(sudo docker ps -aq --filter ancestor=${var.docker_image})",
+      "if [ -n \"$CONTAINER\" ]; then sudo docker stop $CONTAINER && sudo docker rm $CONTAINER; fi",
+      "sudo find /mnt/FoundryVTT -name '*.lock' -delete",
+      "sudo docker run -d --user 421:421 -v /mnt/FoundryVTT:/data -p 30000:30000 --env-file /mnt/FoundryVTT/.env ${var.docker_image}",
     ]
   }
 
-  depends_on = [null_resource.wait_for_dns]
+  depends_on = [null_resource.wait_for_dns, null_resource.provision_droplet]
 }

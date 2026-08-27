@@ -7,10 +7,12 @@ if [ -z ${FOUNDRY_PASSWORD} ]; then echo "FOUNDRY_PASSWORD is unset" ; exit ; fi
 
 export TF_VAR_do_token=${DO_KEY}
 export TF_VAR_pvt_key=${PVT_KEY}
+export TF_VAR_pub_key=${PUB_KEY}
 export TF_VAR_foundry_user=${FOUNDRY_USERNAME}
 export TF_VAR_foundry_password=${FOUNDRY_PASSWORD}
 export TF_VAR_duckdns_token=${DNS_TOKEN}
 export TF_VAR_duckdns_subdomain=${DNS_DOMAIN}
+export TF_VAR_operator_ip=${OPERATOR_IP}
 
 # terraform destroy -var "do_token=${DO_KEY}" -var "pvt_key=${PVT_KEY}" -var "foundry_user=${FOUNDRY_USERNAME}" -var "foundry_password=${FOUNDRY_PASSWORD}" -auto-approve
 SSH_AUTH_SOCK= terraform destroy -auto-approve </dev/null 2>&1 | tee terraform-destroy.log
