@@ -12,7 +12,11 @@ export TF_VAR_foundry_password=${FOUNDRY_PASSWORD}
 export TF_VAR_duckdns_token=${DNS_TOKEN}
 export TF_VAR_duckdns_subdomain=${DNS_DOMAIN}
 export TF_VAR_certs=${CERTS}
-export TF_VAR_operator_ip=${OPERATOR_IP}
+# Auto-detect public IPv4 and IPv6 addresses; fall back to OPERATOR_IP from .env if detection fails
+DETECTED_IPV4=$(curl -4 -s --max-time 3 https://ifconfig.me 2>/dev/null || curl -4 -s --max-time 3 https://api.ipify.org 2>/dev/null)
+DETECTED_IPV6=$(curl -6 -s --max-time 3 https://ifconfig.me 2>/dev/null || curl -6 -s --max-time 3 https://api64.ipify.org 2>/dev/null)
+DETECTED_IPS=$(echo "${DETECTED_IPV4} ${DETECTED_IPV6}" | xargs | tr ' ' ',')
+export TF_VAR_operator_ip=${DETECTED_IPS:-${OPERATOR_IP}}
 export TF_VAR_pub_key=${PUB_KEY}
 
 worldbundler
