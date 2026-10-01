@@ -13,3 +13,4 @@ terraform-destroy.log
 **/.DS_Store
 terraform/specs/*.out
 *.tfplan
+specs/
